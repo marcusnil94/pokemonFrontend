@@ -2,45 +2,67 @@ let allPokemonContainer = document.getElementById('poke-container');
 
 console.log("Hej");
 
-    function fetchBasePokemon(){
-        fetch('https://pokeapi.co/api/v2/pokemon?limit=151')
-         .then(response => response.json())
-         .then(function(allpokemon){
-         allpokemon.results.forEach(function(pokemon){
-           fetchPokemonData(pokemon); 
-         })
+function fetchBasePokemon() {
+    fetch('https://pokeapi.co/api/v2/pokemon?limit=151')
+        .then(response => response.json())
+        .then(function (allpokemon) {
+            appendHeader(); 
+            allpokemon.results.forEach(function (pokemon) {
+                fetchPokemonData(pokemon);
+            })
         })
-       }
+}
 
-       function renderPokemon(pokeData){
-        if (!pokeData) {
-            console.error('Error: Ingen data finns.');
-            return;
-        }
-        allPokemonContainer = document.getElementById('poke-container');
-        let pokeContainer = document.createElement("div") 
-        let pokeName = document.createElement('h4')
-        pokeName.innerText = pokeData.name
-        let pokeNumber = document.createElement('p')
-        pokeNumber.innerText = `#${pokeData.id}`
-        let pokeTypes = document.createElement('ul')
-        let pokemonId = pokeData.id;
+function appendHeader() {
+    let caughtPokemonContainer = document.getElementById('poke-container');
+    caughtPokemonContainer.innerHTML = "";
+    let indexHeader = document.createElement("h1");
+    indexHeader.innerText = "151 Original Pokémon!";
+    let indexH2 = document.createElement("h2");
+    indexH2.innerText = "Klicka på en Pokémon för att gå in och fånga den.";
+    
+    let showMyPokemonBtn = document.createElement("button");
+    showMyPokemonBtn.innerText = "Mina Pokemon!";
 
-        let pokemonImg = document.createElement("img");
-        pokemonImg.style.width = "400px";
-        pokemonImg.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${pokemonId}.png`;
+    showMyPokemonBtn.addEventListener("click", () => {
+        fetchCaughtPokemons();
+    })
 
-        pokeContainer.addEventListener("click", () => {
-            printPokemonInfo(pokeData);
-        })
-        
-        createTypes(pokeData.types, pokeTypes) 
-        
-        pokeContainer.append(pokeName, pokeNumber, pokeTypes, pokemonImg);   
-        
-        allPokemonContainer.appendChild(pokeContainer);       
-                                                                
-        }
+    showMyPokemonBtn.classList.add("showMyPokemonBtn");
+    allPokemonContainer.appendChild(indexHeader);
+    allPokemonContainer.appendChild(indexH2);
+    allPokemonContainer.appendChild(showMyPokemonBtn);
+}
+
+function renderPokemon(pokeData) {
+    if (!pokeData) {
+        console.error('Error: Ingen data finns.');
+        return;
+    }
+
+    let pokeContainer = document.createElement("div");
+    pokeContainer.classList.add("pokemon-container");
+    let pokeName = document.createElement('h4');
+    pokeName.innerText = pokeData.name
+    let pokeNumber = document.createElement('p');
+    pokeNumber.innerText = `#${pokeData.id}`
+    let pokeTypes = document.createElement('ul');
+    pokeTypes.innerText ="Type: "
+    let pokemonId = pokeData.id;
+
+    let pokemonImg = document.createElement("img");
+    pokemonImg.style.width = "400px";
+    pokemonImg.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${pokemonId}.png`;
+
+    pokeContainer.addEventListener("click", () => {
+        printPokemonInfo(pokeData);
+    });
+
+    createTypes(pokeData.types, pokeTypes);
+
+    pokeContainer.append(pokeName, pokeNumber, pokeTypes, pokemonImg);
+    allPokemonContainer.appendChild(pokeContainer);
+}
 
         function fetchPokemonData(pokemon) {
             let url = pokemon.url;
@@ -66,12 +88,15 @@ function createTypes(types, ul){
 
   function printPokemonInfo(pokeData) {
     let pokemonBox = document.getElementById("poke-container");
+    let pokemonInfoContainer = document.getElementById("pokemonInfoContainer");
+    
     if (!pokemonBox) {
         console.error('Element with ID "pokemonBox" not found.');
         return;
     }
 
     pokemonBox.innerHTML = "";
+    pokemonInfoContainer.innerHTML = "";
 
     let pokemonHeadline = document.createElement("h2");
     pokemonHeadline.innerText = pokeData.name;
@@ -97,6 +122,13 @@ function createTypes(types, ul){
     let showMyPokemonBtn = document.createElement("button");
     showMyPokemonBtn.innerText = "Mina Pokemon!";
 
+    let homeBtn = document.createElement("button");
+    homeBtn.innerText = "Till startsidan";
+
+    homeBtn.addEventListener("click", () => {
+        fetchBasePokemon();
+    })
+
     showMyPokemonBtn.addEventListener("click", () => {
         fetchCaughtPokemons();
     })
@@ -106,7 +138,7 @@ function createTypes(types, ul){
         catchPokemon(pokeData, descriptionInput.value);  
     });
 
-    pokemonBox.append(pokemonHeadline, pokemonImg, pokemonTypeHeader, pokemonType, descriptionInput, catchBtn, showMyPokemonBtn);
+    pokemonInfoContainer.append(pokemonHeadline, pokemonImg, pokemonTypeHeader, pokemonType, descriptionInput, catchBtn, showMyPokemonBtn, homeBtn);
 }
 
 function catchPokemon(pokeData, descriptionInput) {
@@ -116,7 +148,7 @@ function catchPokemon(pokeData, descriptionInput) {
         .then(function(caughtPokemonIds) {
             
             if (caughtPokemonIds.includes(pokeData.id)) {
-                
+                displayMessage(`Du har redan fångat en ${pokeData.name}!`);
                 console.error(`Pokemon with ID ${pokeData.id} is already caught.`);
             } else {
                 
@@ -138,6 +170,7 @@ function catchPokemon(pokeData, descriptionInput) {
                 })
                 .then(response => response.json())
                 .then(data => {
+                    displayMessage(`Du fångade ${pokeData.name}!`);
                     console.log('Pokemon caught and saved:', data);
                 })
                 .catch(error => console.error('Error catching Pokemon:', error));
@@ -158,13 +191,30 @@ function fetchCaughtPokemons() {
 
 function renderCaughtPokemons(caughtPokemons) {
     let caughtPokemonContainer = document.getElementById('poke-container');
+    let pokemonInfoContainer = document.getElementById("pokemonInfoContainer");
 
     if (!caughtPokemonContainer) {
         console.error('Element with ID "poke-container" not found.');
         return;
     }
-
+    pokemonInfoContainer.innerHTML = "";
     caughtPokemonContainer.innerHTML = ""; 
+
+    let pokedexHeader = document.createElement("h1");
+    pokedexHeader.innerText = "Min Pokédex";
+
+    let homeBtn = document.createElement("button");
+    homeBtn.classList.add =("homeBtn");
+    homeBtn.innerText = "Till startsidan";
+    
+
+    homeBtn.addEventListener("click", () => {
+        fetchBasePokemon();
+    })
+
+    caughtPokemonContainer.appendChild(pokedexHeader);
+    caughtPokemonContainer.appendChild(homeBtn);
+
 
     caughtPokemons.forEach(function (pokemon) {
         let caughtPokemonDiv = document.createElement("div");
@@ -175,17 +225,21 @@ function renderCaughtPokemons(caughtPokemons) {
         let caughtPokemonNr = document.createElement("p");
         let releasePokemonBtn = document.createElement("button");
         let editPokemonBtn = document.createElement("button"); 
+        
+        caughtPokemonDiv.classList.add("pokemon-container");
+        
 
-        releasePokemonBtn.innerText = "Släpp fri";
+        releasePokemonBtn.innerText = "Släpp fri!";
         releasePokemonBtn.addEventListener("click", () => {
             deletePokemon(pokemon.id);  
         });
 
-        editPokemonBtn.innerText = "Redigera";
+        editPokemonBtn.innerText = "Redigera beskrivning";
         editPokemonBtn.addEventListener("click", () => {
             let newDescription = prompt("Ange ny beskrivning:");
             if (newDescription !== null) {
                 updatePokemonDescription(pokemon.id, newDescription);
+                displayMessage(`Beskrivning ändrad!`);
             }
         });
 
@@ -209,6 +263,7 @@ function deletePokemon(pokemonId) {
     .then(response => {
         if (response.ok) {
             console.log(`Pokemon with ID ${pokemonId} deleted successfully.`);
+            displayMessage(`Pokemon med id ${pokemonId} släpptes fri!`);
             fetchCaughtPokemons(); 
         } else {
             console.error('Error deleting Pokemon:', response.statusText);
@@ -231,6 +286,11 @@ function updatePokemonDescription(pokemonId, newDescription) {
         }
     })
     .catch(error => console.error(`Error updating Pokemon with ID ${pokemonId} description:`, error));
+}
+
+function displayMessage(message) {
+
+    alert(message); 
 }
 
 fetchBasePokemon();
